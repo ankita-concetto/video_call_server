@@ -3,7 +3,8 @@ var Configuration = require('../../Configuration.js');
 var cst = require('../../../constants.js');
 var Common = require('../../Common');
 var forEachLimit  = require('async/forEachLimit');
-const sexec = require('../../tools/sexec.js')
+const sexec = require('../../tools/sexec.js');
+const deleteFolderRecursive = require('../../tools/deleteFolderRecursive.js');
 
 var path = require('path');
 var fs = require('fs');
@@ -57,6 +58,7 @@ function retrieveRemote(url, dest, cb) {
   var wget = spawn('wget', [url, '-O', dest, '-q'], {
     stdio : 'inherit',
     env: process.env,
+    windowsHide: true,
 		shell : true
   })
 
@@ -107,7 +109,7 @@ function installLocal(PM2, module_filepath, opts, cb) {
 
 function deleteModulePath(module_name) {
   var sanitized = module_name.replace(/\./g, '')
-  execSync(`rm -r ${path.join(cst.DEFAULT_MODULE_PATH, module_name)}`, { silent: true })
+  deleteFolderRecursive(path.join(cst.DEFAULT_MODULE_PATH, module_name));
 }
 
 function runInstall(PM2, target_path, module_name, opts, cb) {

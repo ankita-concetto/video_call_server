@@ -1,5 +1,5 @@
 /**
- * Copyright 2013-2021 the PM2 project authors. All rights reserved.
+ * Copyright 2013-2022 the PM2 project authors. All rights reserved.
  * Use of this source code is governed by a license that
  * can be found in the LICENSE file.
  */
@@ -25,23 +25,14 @@ var Utility       = require('./Utility');
 var cst           = require('../constants.js');
 var timesLimit    = require('async/timesLimit');
 var Configuration = require('./Configuration.js');
-var semver        = require('semver');
 
 /**
  * Override cluster module configuration
  */
-if (semver.lt(process.version, '10.0.0')) {
-  cluster.setupMaster({
-    windowsHide: true,
-    exec : path.resolve(path.dirname(module.filename), 'ProcessContainerLegacy.js')
-  });
-}
-else {
-  cluster.setupMaster({
-    windowsHide: true,
-    exec : path.resolve(path.dirname(module.filename), 'ProcessContainer.js')
-  });
-}
+cluster.setupMaster({
+  windowsHide: true,
+  exec : path.resolve(path.dirname(module.filename), 'ProcessContainer.js')
+});
 
 /**
  * Expose God
@@ -78,10 +69,6 @@ God.init = function() {
   God.system_infos_proc = null
 
   this.configuration = Configuration.getSync('pm2')
-
-  if (this.configuration && this.configuration.sysmonit == 'true') {
-    God.launchSysMonitoring({}, () => { console.log('System monitoring launched') })
-  }
 
   setTimeout(function() {
     God.Worker.start()
@@ -585,28 +572,5 @@ God.injectVariables = function injectVariables (env, cb) {
 
   return cb(null, env);
 };
-
-God.launchSysMonitoring = function(env, cb) {
-  if (God.system_infos_proc !== null)
-    return cb(new Error('Sys Monitoring already launched'))
-
-  try {
-    var sysinfo = require('./Sysinfo/SystemInfo.js')
-    God.system_infos_proc = new sysinfo()
-
-    setInterval(() => {
-      God.system_infos_proc.query((err, data) => {
-        if (err) return
-        God.system_infos = data
-      })
-    }, 1000)
-
-    God.system_infos_proc.fork()
-  } catch(e) {
-    console.log(e)
-    God.system_infos_proc = null
-  }
-  return cb()
-}
 
 God.init()

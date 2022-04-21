@@ -16,6 +16,7 @@ module.exports =  Object.freeze({
     bye : "bye",
     removeUser : "removeUser",
     chat: "chat",
+    typing: "typing",
     initiateChat: "initiateChat",
     sendMessage : "sendMessage",
     userStatus : "userStatus",
@@ -25,6 +26,6 @@ module.exports =  Object.freeze({
     messageStatus : "messageStatus",
     delivered : "delivered",
     seen : "seen",
-    received : "received"
-
+    received : "received",
+    test: "test"
 });

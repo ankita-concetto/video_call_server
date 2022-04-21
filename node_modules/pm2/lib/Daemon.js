@@ -1,5 +1,5 @@
 /**
- * Copyright 2013-2021 the PM2 project authors. All rights reserved.
+ * Copyright 2013-2022 the PM2 project authors. All rights reserved.
  * Use of this source code is governed by a license that
  * can be found in the LICENSE file.
  */
@@ -48,6 +48,7 @@ Daemon.prototype.start = function() {
 		var path = cst.IS_WINDOWS ? __dirname + '/../bin/pm2' : process.env['_'];
     var fork_new_pm2 = require('child_process').spawn('node', [path, 'update'], {
       detached: true,
+      windowsHide: true,
       stdio: 'inherit'
     });
 
@@ -216,9 +217,7 @@ Daemon.prototype.innerStart = function(cb) {
     profileCPU              : profile.bind(this, 'cpu'),
     profileMEM              : profile.bind(this, 'mem'),
     prepare                 : God.prepare,
-    launchSysMonitoring     : God.launchSysMonitoring,
     getMonitorData          : God.getMonitorData,
-    getSystemData           : God.getSystemData,
 
     startProcessId          : God.startProcessId,
     stopProcessId           : God.stopProcessId,
@@ -427,7 +426,7 @@ Daemon.prototype.startLogic = function() {
     if (!msg.process || !God.clusters_db[msg.process.pm_id])
       return console.error('AXM MONITOR Unknown id %s', msg.process.pm_id);
 
-    util._extend(God.clusters_db[msg.process.pm_id].pm2_env.axm_monitor, Utility.clone(msg.data));
+    Object.assign(God.clusters_db[msg.process.pm_id].pm2_env.axm_monitor, Utility.clone(msg.data));
     msg = null;
   });
 

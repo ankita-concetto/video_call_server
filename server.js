@@ -37,12 +37,12 @@ wsServer.on('request', function (request) {
             console.log("closing")
             // delete users[request.name]
             let sendConn = connections.get(request.name);
-            if(sendConn){
-                sendTo(sendConn,{'type' : constants.userStatus,'data' : {'userId' : request.name, 'userStatus' : ''+Math.floor(new Date().getTime())}})
+            if (sendConn) {
+                sendTo(sendConn, { 'type': constants.userStatus, 'data': { 'userId': request.name, 'userStatus': '' + Math.floor(new Date().getTime()) } })
                 delete sendConn;
-                console.log('connection size before delete: '+connections.size);
+                console.log('connection size before delete: ' + connections.size);
                 connections.delete(request.name);
-                console.log('connection size after delete: '+connections.size);
+                console.log('connection size after delete: ' + connections.size);
             }
         }
     });
@@ -64,70 +64,98 @@ function manageIncomingData(message, connection, request) {
         console.log("Invalid JSON");
         return;
     }
-    console.log('type: '+data.type);
+    console.log('type: ' + data.type);
     switch (data.type) {
         case constants.addUser:
             var messageData = JSON.parse(data.message);
-			var userId = messageData.userId;
-            connections.set(userId,connection);
+            var userId = messageData.userId;
+            connections.set(userId, connection);
             request.name = userId;
-            sendTo(connection,{'type' : constants.addUser,'data' : {'result' : 'success'}})
-            console.log('connections size: '+connections.size);
+            sendTo(connection, { 'type': constants.addUser, 'data': { 'result': 'success' } })
+            console.log('connections size: ' + connections.size);
 
             break;
 
 
         case constants.videoCall:
-			videoCall.manage(data.message, connection, request,connections)
+            videoCall.manage(data.message, connection, request, connections)
             break;
 
         case constants.chat:
             //sendTo(connection,{'type':constants.chat, 'data': {'result':'success'}})
-            
+
             var messageData = JSON.parse(data.message);
             var toUserId = messageData.toUserId;
             var fromUserId = messageData.fromUserId;
-            console.log('TouserId: '+toUserId+"  fromUserId:"+fromUserId);
+            console.log('TouserId: ' + toUserId + "  fromUserId:" + fromUserId);
             let conn = connections.get(toUserId);
-            if(conn){
+            if (conn) {
                 console.log('send userstatus toUser');
-                sendTo(conn,{'type' : constants.userStatus,'data' : {'userId': toUserId, 'userStatus': "Online"}});
+                sendTo(conn, { 'type': constants.userStatus, 'data': { 'userId': toUserId, 'userStatus': "Online" } });
             }
             break;
-        
+
+        case constants.typing:
+            var messageData = JSON.parse(data.message);
+            var toUserId = messageData.userId;
+            var status = messageData.userStatus;
+            console.log('TouserId: ' + toUserId + '');
+            let connecti = connections.get(toUserId);
+            if (connecti) {
+                console.log('send typing toUser');
+                sendTo(connecti, { 'type': constants.typing, 'data': { 'userId': toUserId, 'userStatus': status } });
+            }
+            break
+
+        case constants.test:
+            var messageData = JSON.parse(data.message);
+            var toUserId = messageData.userId;
+            var msg = messageData.message;
+            let conTest = connections.get(toUserId);
+            if (conTest) {
+                console.log('testing');
+                sendTo(conTest, { 'type': constants.test, 'data': { 'userId': toUserId, 'message': msg } });
+            }
+            break;
+
+
         case constants.userStatus:
         case constants.sendMessage:
             //console.log('connections is'+JSON.stringify(connection));
             var messageData = JSON.parse(data.message);
             var userId = messageData.userId;
-            console.log('userId: '+userId);
-            console.log('connection size: '+connections.size);
+            console.log('userId: ' + userId);
+            console.log('connection size: ' + connections.size);
             let sendConn = connections.get(userId);
 
-            if(data.type == constants.sendMessage) {
-                if(messageData.messageStatus == constants.sent){
-                    sendTo(connection, {'type': constants.messageStatus, 'data': {
-                        'userId': userId,
-                        'senderId': messageData.senderId,
-                        'message':messageData.message,
-                        'messageId' : messageData.messageId,
-                        'messageStatus' : constants.delivered
-                    }});
+            if (data.type == constants.sendMessage) {
+                if (messageData.messageStatus == constants.sent) {
+                    sendTo(connection, {
+                        'type': constants.messageStatus, 'data': {
+                            'userId': userId,
+                            'senderId': messageData.senderId,
+                            'message': messageData.message,
+                            'messageId': messageData.messageId,
+                            'messageStatus': constants.delivered
+                        }
+                    });
                 }
             }
 
-            if(sendConn){
+            if (sendConn) {
                 console.log('inside sendconn');
-                sendTo(sendConn, {'type': data.type, 'message': data.message});
-                if(data.type==constants.sendMessage){
-                    if(messageData.messageStatus == constants.sent){
-                        sendTo(connection, {'type': constants.messageStatus, 'data': {
-                            'userId': userId,
-                            'senderId': messageData.senderId,
-                            'message':messageData.message,
-                            'messageId' : messageData.messageId,
-                            'messageStatus' : constants.received
-                        }});
+                sendTo(sendConn, { 'type': data.type, 'message': data.message });
+                if (data.type == constants.sendMessage) {
+                    if (messageData.messageStatus == constants.sent) {
+                        sendTo(connection, {
+                            'type': constants.messageStatus, 'data': {
+                                'userId': userId,
+                                'senderId': messageData.senderId,
+                                'message': messageData.message,
+                                'messageId': messageData.messageId,
+                                'messageStatus': constants.received
+                            }
+                        });
                     }
                 }
             }
@@ -136,12 +164,12 @@ function manageIncomingData(message, connection, request) {
         case constants.messageStatus:
             var messageData = JSON.parse(data.message);
             var userId = messageData.userId;
-            console.log('userId: '+userId);
-            console.log('connection size: '+connections.size);
+            console.log('userId: ' + userId);
+            console.log('connection size: ' + connections.size);
             let messageStatusConn = connections.get(userId);
-            if(messageStatusConn){
+            if (messageStatusConn) {
                 console.log('inside messageStatusConn');
-                sendTo(messageStatusConn, {'type': data.type, 'message': data.message});
+                sendTo(messageStatusConn, { 'type': data.type, 'message': data.message });
             }
             break;
     }

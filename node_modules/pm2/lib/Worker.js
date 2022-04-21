@@ -1,16 +1,17 @@
 /**
- * Copyright 2013-2021 the PM2 project authors. All rights reserved.
+ * Copyright 2013-2022 the PM2 project authors. All rights reserved.
  * Use of this source code is governed by a license that
  * can be found in the LICENSE file.
  */
-var vizion    = require('vizion');
-var cst       = require('../constants.js');
-var eachLimit = require('async/eachLimit');
-var debug     = require('debug')('pm2:worker');
-var domain    = require('domain');
-var cronJob = require('cron').CronJob
+const vizion    = require('vizion');
+const eachLimit = require('async/eachLimit');
+const debug     = require('debug')('pm2:worker');
+const domain    = require('domain');
+const Cron      = require('croner');
+const pkg       = require('../package.json');
+
+var cst    = require('../constants.js');
 var vCheck = require('./VersionCheck.js')
-var pkg = require('../package.json')
 
 module.exports = function(God) {
   var timer = null;
@@ -27,25 +28,21 @@ module.exports = function(God) {
     if (!pm2_env ||
         pm2_env.pm_id === undefined ||
         !pm2_env.cron_restart ||
+        pm2_env.cron_restart == '0' ||
         God.CronJobs.has(God.getCronID(pm2_env.pm_id)))
       return;
 
     var pm_id = pm2_env.pm_id
     console.log('[PM2][WORKER] Registering a cron job on:', pm_id);
 
-    var job = new cronJob({
-      cronTime: pm2_env.cron_restart,
-      onTick: function() {
-        God.restartProcessId({id: pm_id}, function(err, data) {
-          if (err)
-            console.error(err.stack || err);
-          return;
-        });
-      },
-      start: false
+    var job = Cron(pm2_env.cron_restart, function() {
+      God.restartProcessId({id: pm_id}, function(err, data) {
+        if (err)
+          console.error(err.stack || err);
+        return;
+      });
     });
 
-    job.start();
     God.CronJobs.set(God.getCronID(pm_id), job);
   }
 
@@ -58,7 +55,10 @@ module.exports = function(God) {
       return;
     console.log('[PM2] Deregistering a cron job on:', id);
     var job = God.CronJobs.get(God.getCronID(id));
-    job.stop();
+
+    if (job)
+      job.stop();
+
     God.CronJobs.delete(God.getCronID(id));
   };
 

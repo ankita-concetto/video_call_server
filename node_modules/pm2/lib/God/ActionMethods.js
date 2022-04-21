@@ -1,5 +1,5 @@
 /**
- * Copyright 2013-2021 the PM2 project authors. All rights reserved.
+ * Copyright 2013-2022 the PM2 project authors. All rights reserved.
  * Use of this source code is governed by a license that
  * can be found in the LICENSE file.
  */
@@ -116,23 +116,6 @@ module.exports = function(God) {
 
       cb(null, processes);
     });
-  };
-
-  /**
-   * Description
-   * @method getSystemData
-   * @param {} env
-   * @param {} cb
-   * @return
-   */
-  God.getSystemData = function getSystemData(env, cb) {
-    if (God.system_infos_proc !== null)
-      God.system_infos_proc.query((err, data) => {
-        cb(null, data)
-      })
-    else {
-      cb(new Error('Sysinfos not launched, type: pm2 sysmonit'))
-    }
   };
 
   /**
@@ -413,6 +396,7 @@ module.exports = function(God) {
     var proc = God.clusters_db[id];
 
     God.resetState(proc.pm2_env);
+    God.deleteCron(id);
 
     /**
      * Merge new application configuration on restart
