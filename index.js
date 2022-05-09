@@ -1,43 +1,37 @@
 const express = require("express");
-var http = require("http");
-const internal = require("stream");
 const app = express();
-const port = process.env.PORT || 3000;
-var server = http.createServer(app);
-var io = require("socket.io")(server);
+const server = require("http").Server(app);
+const { v4: uuidv4 } = require("uuid");
+app.set("view engine", "ejs");
+const io = require("socket.io")(server, {
+  cors: {
+    origin: '*'
+  }
+});
+const { ExpressPeerServer } = require("peer");
+const peerServer = ExpressPeerServer(server, {
+  debug: true,
+});
 
-//middlewre
-app.use(express.json());
-var clients = {};
+app.use("/peerjs", peerServer);
+app.use(express.static("public"));
+
+app.get("/", (req, res) => {
+  res.redirect(`/${uuidv4()}`);
+});
+
+app.get("/:room", (req, res) => {
+  res.render("room", { roomId: req.params.room });
+});
 
 io.on("connection", (socket) => {
-  console.log("connetetd");
-  
-  console.log(socket.id, "has joined");
-
-  socket.on("signin", (id) => {
-    clients[socket.json['handshake']['query']['id']] = socket;
-      console.log(clients);
-  });
-
-  socket.on("groupMessage", (msg) => {
-    console.log(msg);
-    var userId = msg.userId;
-    Object.keys(clients).forEach(key => {
-      console.log(key, clients[key]);
-      if (key!=clients[parseInt( userId, 10 )]) clients[parseInt( userId, 10 )].emit("message", msg);
+  socket.on("join-room", (roomId, userId, userName) => {
+    socket.join(roomId);
+    socket.to(roomId).broadcast.emit("user-connected", userId);
+    socket.on("message", (message) => {
+      io.to(roomId).emit("createMessage", message, userName);
     });
-    
   });
-
-  socket.on("message", (msg) => {
-    console.log(msg);
-    var targetId = msg.targetId;
-    if (clients[parseInt( targetId, 10 )]) clients[parseInt( targetId, 10 )].emit("message", msg);
-  });
-
 });
 
-server.listen(port,  () => {
-  console.log("server started");
-});
+server.listen(process.env.PORT || 3002);
