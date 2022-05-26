@@ -1,3 +1,4 @@
+const audioCall = require("./audio_call/audio_call.js");
 const videoCall = require("./video_call/video_call.js");
 const constants = require("./constants.js");
 const webSocket = require("websocket");
@@ -60,6 +61,9 @@ function manageIncomingData(message, connection, request) {
             break;
         case constants.videoCall:
 			videoCall.manage(data.message, connection, request,users)
+            break;
+        case constants.audioCall:
+            audioCall.manage(data.message, connection, request,users)
             break;
     }
 }

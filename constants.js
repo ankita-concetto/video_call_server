@@ -14,5 +14,8 @@ module.exports =  Object.freeze({
     offer : "offer",
     answer : "answer",
     bye : "bye",
-    removeUser : "removeUser"
+    removeUser : "removeUser",
+    failedToJoinAudioCall : "failedToJoinAudioCall",
+    audioCallStarted : "audioCallStarted",
+    audioCall : "audioCall",
 });
