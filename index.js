@@ -1,14 +1,24 @@
 const server = require('http').createServer()
 const io = require('socket.io')(server)
+const constants = require("./constants.js");
+let users = []
 
 io.on('connection', function (client) {
 
   console.log('client connect...', client.id);
-  //console.log('client connect --->...', client.request.ha);
+  
+  let connection = client.conn;
+  
+  client.on('message', function name(message) {
+    console.log('data received -->', message);
 
-  client.on('message', function name(data) {
-    console.log(data);
-    io.emit('message', data)
+    //{"type":"addUser","message":{"userId": "3"}}
+
+    io.emit('message', message);
+    
+    // process socket io message
+    manageIncomingData(message, connection, client)
+   
   })
 
   client.on('connect', function () {
@@ -34,20 +44,21 @@ server.listen(server_port, function (err) {
 
 function manageIncomingData(message, connection, request) {
   let data
-  //accepting only JSON messages
-  try {
-      data = JSON.parse(message);
-      console.log(data);
-  } catch (e) {
-      console.log("Invalid JSON");
-      return;
-  }
+    //accepting only JSON messages
+    try {
+        data = JSON.parse(message);
+        console.log(data);
+    } catch (e) {
+        console.log("Invalid JSON");
+        return;
+    }
+
   switch (data.type) {
       case constants.addUser:
-    var userId = data.message[constants.userId]
-          users[userId] = connection
+    var userId = data.message.userId; 
+          users[userId] = connection;
           request.name = userId;
-          sendTo(connection,{'type' : constants.addUser,'data' : {'result' : 'success'}})
+          sendTo(request,{'type' : constants.addUser,'data' : {'result' : 'success'}})
           break;
       case constants.videoCall:
     videoCall.manage(data.message, connection, request,users)
@@ -57,3 +68,14 @@ function manageIncomingData(message, connection, request) {
           break;
   }
 }
+
+function sendTo(client, msg) {
+  
+    //var detail = JSON.parse(msg);
+    io.to(client.id).emit('to_user', "msg")
+    
+    }
+
+//.on means andriod mathi aavse ane .emit means jase
+
+
