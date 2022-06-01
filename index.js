@@ -1,6 +1,7 @@
 const server = require('http').createServer()
 const io = require('socket.io')(server)
 const constants = require("./constants.js");
+const audioCall = require("./audio_call/audio_call.js");
 let users = []
 
 io.on('connection', function (client) {
@@ -55,16 +56,13 @@ function manageIncomingData(message, connection, request) {
 
   switch (data.type) {
       case constants.addUser:
-    var userId = data.message.userId; 
+          var userId = data.message.userId; 
           users[userId] = connection;
           request.name = userId;
           sendTo(request,{'type' : constants.addUser,'data' : {'result' : 'success'}})
           break;
-      case constants.videoCall:
-    videoCall.manage(data.message, connection, request,users)
-          break;
-      case constants.audioCall:
-          audioCall.manage(data.message, connection, request,users)
+      case constants.startCall:
+          audioCall.manage(data, connection, request,users, io)
           break;
   }
 }
@@ -72,7 +70,7 @@ function manageIncomingData(message, connection, request) {
 function sendTo(client, msg) {
   
     //var detail = JSON.parse(msg);
-    io.to(client.id).emit('to_user', "msg")
+    io.to(client.id).emit('fromServer', "Connection is live now.");
     
     }
 

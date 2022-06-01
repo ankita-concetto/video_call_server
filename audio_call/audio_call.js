@@ -1,16 +1,25 @@
 var constants = require("../constants.js");
 
 let channels = []
+let io;
 
 function sendTo(connection, message) {
-    connection.send(JSON.stringify(message));
+    //connection.send(JSON.stringify(message));
+    io.to(connection.id).emit('fromServer', JSON.stringify(message));
 }
-exports.manage = async (data, connection, request, users) => {
+exports.manage = async (data, connection, request, users, ioObj) => {
+
+    io = ioObj;
+connection = request;
+
     switch (data.type) {
 
         case constants.startCall:
-            let channelName = data.data[constants.channelName]
-            let userId = data.data[constants.userId]
+            //let channelName = data.data[constants.channelName]
+
+            let channelName = data.message.userId
+            let userId = data.message.userId
+
             if (channelName != null && userId != null) {
                 if (channels.includes(channelName) && !channels[channelName].hasOwnProperty(userId)) {
                     var listOfUserId = channels[channelName]
