@@ -10,7 +10,7 @@ function sendTo(connection, message) {
 exports.manage = async (data, connection, request, users, ioObj) => {
 
     io = ioObj;
-connection = request;
+    connection = request;
 
     switch (data.type) {
 
